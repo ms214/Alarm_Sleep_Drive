@@ -27,6 +27,8 @@ mp_face_mesh = mp.solutions.face_mesh
 drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
 cap = cv2.VideoCapture(0)
 queue = []
+cnt = 0
+isSleep = False
 with mp_face_mesh.FaceMesh(
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5, max_num_faces=2) as face_mesh:
@@ -56,6 +58,7 @@ with mp_face_mesh.FaceMesh(
         image_width, image_height = image.shape[1], image.shape[0]
 
         landmark_point = []
+        landmark_point2 = []
 
         for index, landmark in enumerate(face_landmarks.landmark):
             if landmark.visibility < 0 or landmark.presence < 0:
@@ -65,15 +68,27 @@ with mp_face_mesh.FaceMesh(
             landmark_y = min(int(landmark.y * image_height), image_height - 1)
 
             landmark_point.append((landmark_x, landmark_y))
+            landmark_point2.append(landmark.z*100)
 
-            # left eye 133~246
-            # right eye 362 ~ 466
-        if(len(queue) <30):
-            queue.append(landmark_point[158][0] - landmark_point[145][0])
-            print(landmark_point[158][0] - landmark_point[145][0])
+        # middle point of lips
+        #print(landmark_point2[13])
+
+        if(len(queue) < 100):
+            queue.append(landmark_point2[13])
+
         else:
-            if landmark_point[158][0] - landmark_point[145][0] < min(queue):
-                print(True)
+            ptr = sum(queue) // 100 + 1
+            if(landmark_point2[13] >= ptr):
+                cnt += 1
+                #print(cnt)
+                isSleep = True
+            else:
+                isSleep = False
+                cnt = 0
+
+            if(cnt > 50 and isSleep):
+                print(isSleep)
+
 
         mp_drawing.draw_landmarks(
             image=image,
